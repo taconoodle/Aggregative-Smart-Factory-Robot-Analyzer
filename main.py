@@ -1,3 +1,5 @@
+def banana():
+
 def menu():
     while True:
         choice = input(f'Please Choose your option:')
