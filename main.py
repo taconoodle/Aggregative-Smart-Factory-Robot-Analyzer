@@ -12,7 +12,8 @@ def avg_speed(min_speed, max_speed):
 
     robot_info = {}
 
-    with open("data/smart_factory_robots_200.csv") as file:
+    # with open("data/smart_factory_robots_200.csv") as file:
+    with open(DATAPATH) as file:
         reader = csv.reader(file)
         next(reader)
         for row in reader:
@@ -39,12 +40,14 @@ def avg_speed(min_speed, max_speed):
 
 ########################## TACO CODE #############################
 
-datapath = "C:/Users/giann/Downloads/smart_factory_robots.csv"
+DATAPATH = "C:/Users/giann/Downloads/smart_factory_robots.csv"
+#"C:/Users/Ιωάννης Βλάσσης/Downloads/smart_factory_robots.csv"
+
 def get_avg_speeds():
     #Dictionary of the form: robot_info[robot ID] = [cumulative speed, count of measurements]
     robot_info = {}
 
-    with open(datapath) as file:
+    with open(DATAPATH) as file:
         reader = csv.reader(file)
         next(reader)
         for row in reader:
@@ -56,7 +59,7 @@ def get_avg_speeds():
             #Given formula
             speed = math.sqrt(vx ** 2 + vy ** 2)
 
-            #If we don't initialize, the addition under will fail
+            #If we don't initialize, the addition below, will fail
             if robot_id not in robot_info:
                 robot_info[robot_id] = [0, 0]
 
@@ -71,7 +74,48 @@ def get_avg_speeds():
 
     return robot_avgs
 
-# def top_speed(robot_count):
+def top_speed(robot_count: int):
+    sorted_avg_speeds = dict(sorted(get_avg_speeds().items(), key=lambda x: x[1], reverse=True))
+
+    print(f'{'Rank'}  {'robot_id'}  {'Μέση Ταχύτητα (m/s)'}  {'Αριθμός Εγγραφών'}')
+
+    i = 0
+    #NA DW GIATI THELEI PARENTHESH
+    for robot_id, (avg, count) in sorted_avg_speeds.items():
+        if i == robot_count:
+            break
+        i += 1
+
+        print(f'{i:<4}  {robot_id:<8}  {avg:<19.4f}  {count:<15}')
+
+    return sorted_avg_speeds
+
+def collisions(start_time, end_time):
+    #Dictionary of the form: robots_collided[robot ID] = [collision count, time of first collision, time of last collision]
+    robots_collided = {}
+
+    with open(DATAPATH) as file:
+        reader = csv.reader(file)
+        next(reader)
+
+        for row in reader:
+            robot_id = int(row[0])
+            current_time = float(row[1])
+            goal_status = row[8]
+
+            if (start_time <= current_time < end_time) and (goal_status == "collision detected"):
+                #If it's the robot's first entry we have to initialize the values
+                if robot_id not in robots_collided: robots_collided[robot_id] = [0, current_time, 0]
+
+                robots_collided[robot_id][0] += 1
+                robots_collided[robot_id][2] = current_time
+
+        print(f'Robot ID  Collision Count  Timeframe')
+        for robot_id, (count, first_collision_time, last_collision_time) in robots_collided.items():
+            print(f'{robot_id:<8}  {count:<15}  {f'{first_collision_time:.1f}-{last_collision_time:.1f}':<9}')
+
+    return robots_collided
+
 
 
 
@@ -84,18 +128,18 @@ def menu():
             case '1':
                 min_speed = input(f'Please choose your minimum speed:')
                 max_speed = input(f'Please choose your maximum speed:')
-                avg_speed(min_speed, max_speed);
+                avg_speed(min_speed, max_speed)
             case '2':
-                robot_count = input(f'Please choose how many robots:')
-                # top_speed(robot_count)
+                robot_count = int(input(f'Please choose how many robots:'))
+                top_speed(robot_count)
             case '3':
                 min_percentage = input(f'Please choose the minimum percentage of time:')
                 max_percentage = input(f'Please choose the maximum percentage of time:')
                 # idle_ratio(min_percentage, max_percentage)
             case '4':
-                start_time = input(f'Please choose the start time:')
-                end_time = input(f'Please choose the end time:')
-                # collisions(start_time, end_time)
+                start_time = float(input(f'Please choose the start time:'))
+                end_time = float(input(f'Please choose the end time:'))
+                collisions(start_time, end_time)
             case '5':
                 deadlock_steps = input(f'Please choose the minimum amount of steps the robot was in a deadlock for:')
                 # deadlocks(deadlock_steps)
