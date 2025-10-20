@@ -10,11 +10,11 @@ def avg_speed(min_speed, max_speed):
         print("The min speed cannot be greater than the max speed")
         return 0
 
-    robot_info = {}
+    robot_info = {}  # {robotID: [sum_speed, count]}
 
-    with open("data/smart_factory_robots_200.csv") as file:
+    with open("data/smart_factory_robots_200.csv" ) as file:
         reader = csv.reader(file)
-        next(reader)
+        next(reader) # skip header
         for row in reader:
             robot_id = int(row[0])
             vx = float(row[6])
@@ -34,10 +34,48 @@ def avg_speed(min_speed, max_speed):
             print(f"{robot_id} {avg} {count}")
     return 1
 
+def idle_ratio(min_percentage, max_percentage):
+    min_percentage = float(min_percentage)
+    max_percentage = float(max_percentage)
+    if min_percentage > max_percentage:
+        print("The min percentage cannot be greater than the max percentage")
+        return 0
+    robot_info = {} # {robot_id: [idle_time, total_time, last_time, count]}
+
+    with open("data/smart_factory_robots.csv") as file:
+        reader = csv.reader(file)
+        next(reader) # skip header
+        for row in reader:
+            robot_id = int(row[0])
+            current_time = float(row[1])
+            idle_state = row[9]
+
+            if robot_id not in robot_info:
+                robot_info[robot_id] = [0.0, 0.0, current_time, 1]
+                continue
+
+            runtime = current_time - robot_info[robot_id][2]
+            robot_info[robot_id][1] += runtime
+            if idle_state == "True":
+                robot_info[robot_id][0] += runtime
+
+            robot_info[robot_id][2] = current_time
+            robot_info[robot_id][3] +=1
+
+    # Print results
+    print(f"{'robotID'} {'Ποσοστό Αδράνειας'} {'Αριθμός Εγγραφών'}")
+    for robot_id, (idle_time,total_time, last_time ,count) in robot_info.items():
+        if total_time == 0:
+            continue
+        ratio = idle_time / total_time
+        if min_percentage <= ratio <= max_percentage:
+            print(f"{robot_id:} {ratio} {count}")
+    return 1
+
 
 ########################## TACO CODE #############################
 
-def top_speed():
+#def top_speed():
 
 
 ######################## GENERAL CODE ############################
@@ -56,7 +94,7 @@ def menu():
             case '3':
                 min_percentage = input(f'Please choose the minimum percentage of time:')
                 max_percentage = input(f'Please choose the maximum percentage of time:')
-                # idle_ratio(min_percentage, max_percentage)
+                idle_ratio(min_percentage, max_percentage)
             case '4':
                 start_time = input(f'Please choose the start time:')
                 end_time = input(f'Please choose the end time:')
