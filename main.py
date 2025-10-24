@@ -30,7 +30,7 @@ def idle_ratio(min_percentage, max_percentage):
     robot_data = {}
 
     # Read and group by robot
-    with open("data/smart_factory_robots.csv") as file:
+    with open(DATAPATH) as file:
         reader = csv.reader(file)
         next(reader)  # skip header
         for row in reader:
@@ -72,7 +72,6 @@ def idle_ratio(min_percentage, max_percentage):
             filtered_robots[robot_id] = (ratio, count)
 
     return filtered_robots
-
 
 
 ########################## TACO CODE #############################
@@ -128,7 +127,7 @@ def top_speed(robot_count: int):
 
     return top_avg_speeds
 
-def collisions(start_time, end_time):
+def collisions(start_time, end_time=None):
     # Dictionary of the form: robots_collided[robot ID] = [collision count, time of first collision, time of last collision]
     robots_collided = {}
 
@@ -143,9 +142,10 @@ def collisions(start_time, end_time):
             goal_status = row[8]
 
             # Check if the robot crashed inside the requested time frame
-            if (start_time <= current_time < end_time) and (goal_status == "collision detected"):
+            if (start_time <= current_time) and ((end_time is None) or (current_time < end_time)) and (goal_status == "collision detected"):
                 # If it's the robot's first entry we have to initialize the values
-                if robot_id not in robots_collided: robots_collided[robot_id] = [0, current_time, 0]
+                if robot_id not in robots_collided:
+                    robots_collided[robot_id] = [0, current_time, 0]
 
                 # Increase the number of collisions
                 robots_collided[robot_id][0] += 1
@@ -154,6 +154,44 @@ def collisions(start_time, end_time):
 
     return robots_collided
 
+# To be implemented down the line. Compares two robots
+# def is_better(robot_a, robot_b):
+
+def dominance():
+    dominant_robots = {}
+
+    with open(DATAPATH) as file:
+        reader = csv.reader(file)
+        next(reader)
+
+        # Set containing all the existing robot IDs
+        robot_ids = set()
+        for row in reader:
+            # Add each ID in the set
+            robot_ids.add(int(row[0]))
+
+    robot_avgs = get_avg_speeds()
+    robot_idle_ratios = idle_ratio(min_percentage=0, max_percentage=100)
+    robot_collisions = collisions(0)
+
+    for base_robot_id in robot_ids:
+        for candidate_robot_id in robot_ids:
+            base_avg = robot_avgs[base_robot_id][0]
+            candidate_avg = robot_avgs[candidate_robot_id][0]
+
+            base_idle_ratio = robot_idle_ratios[base_robot_id][0]
+            candidate_idle_ratio = robot_idle_ratios[candidate_robot_id][0]
+
+            base_collisions = robot_collisions[base_robot_id][0]
+            candidate_collisions = robot_collisions[candidate_robot_id][0]
+            if (base_avg <= candidate_avg and
+                base_idle_ratio >=candidate_idle_ratio and
+                base_collisions >= candidate_collisions
+            ):
+                dominant_robots[candidate_robot_id] = [candidate_avg, candidate_idle_ratio, candidate_collisions]
+                break
+
+    return dominant_robots
 
 
 
@@ -207,8 +245,11 @@ def menu():
                 deadlock_steps = input(f'Please choose the minimum amount of steps the robot was in a deadlock for:')
                 # deadlocks(deadlock_steps)
             case '6':
-                return
-                # dominance()
+                dominant_robots = dominance()
+                print(f'Robot ID  Average Speed  Idle Ratio  Collision Count')
+
+                for robot_id, (avg, idle_ratio, collisions) in dominant_robots.items():
+                    print(f'{robot_id:<8}  {avg:<13.4f }  {idle_ratio:<10.4f}  {collisions:<15}')
             case '7':
                 active_steps = input(f'Please choose the minimum number of the robot\'s active steps:')
                 average_displacement_per_step = input(f'Please choose the robot\'s average displacement per step:')
