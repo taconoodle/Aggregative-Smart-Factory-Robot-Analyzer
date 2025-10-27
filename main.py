@@ -1,6 +1,9 @@
 import csv
 import math
 
+# DATAPATH = "C:/Users/giann/Downloads/smart_factory_robots.csv"
+DATAPATH = "C:/Users/Ιωάννης Βλάσσης/Downloads/smart_factory_robots.csv"
+
 ######################## SMOKE CODE ##############################
 
 def avg_speed(min_speed, max_speed):
@@ -75,9 +78,6 @@ def idle_ratio(min_percentage, max_percentage):
 
 
 ########################## TACO CODE #############################
-
-DATAPATH = "C:/Users/giann/Downloads/smart_factory_robots.csv"
-# DATAPATH = "C:/Users/Ιωάννης Βλάσσης/Downloads/smart_factory_robots.csv"
 
 def get_avg_speeds():
     # Dictionary of the form: robot_avgs[robot ID] = [average speed, count of measurements]
@@ -158,6 +158,7 @@ def collisions(start_time, end_time=None):
 # def is_better(robot_a, robot_b):
 
 def dominance():
+    # Dictionary of the form: dominant_robots[robot_id] = [avg_speed, idle_ratio, collision_count]
     dominant_robots = {}
 
     with open(DATAPATH) as file:
@@ -170,10 +171,12 @@ def dominance():
             # Add each ID in the set
             robot_ids.add(int(row[0]))
 
+    # Get the data the required data for the comparisons
     robot_avgs = get_avg_speeds()
     robot_idle_ratios = idle_ratio(min_percentage=0, max_percentage=100)
     robot_collisions = collisions(0)
 
+    # Compare each robot with all the others, stop when you find one that's better
     for base_robot_id in robot_ids:
         for candidate_robot_id in robot_ids:
             base_avg = robot_avgs[base_robot_id][0]
@@ -184,14 +187,124 @@ def dominance():
 
             base_collisions = robot_collisions[base_robot_id][0]
             candidate_collisions = robot_collisions[candidate_robot_id][0]
+            # The actual comparison
             if (base_avg <= candidate_avg and
                 base_idle_ratio >=candidate_idle_ratio and
                 base_collisions >= candidate_collisions
             ):
+                # If the robot is better, add it to the dictionary of dominant robots
                 dominant_robots[candidate_robot_id] = [candidate_avg, candidate_idle_ratio, candidate_collisions]
                 break
 
     return dominant_robots
+
+def similar_robots(similarity_ratio: float):
+    # Dictionary of the form: similar_robots[frozenset([robot_A_id, robot_B_id])] = similarity_ratio
+    robot_similarities = {}
+
+    with open(DATAPATH) as file:
+        reader = csv.reader(file)
+        next(reader)
+
+        # Set containing all the available robot IDs
+        robot_ids = set()
+        for row in reader:
+            # Add each ID in the set
+            robot_ids.add(int(row[0]))
+
+        all_robot_measurements = get_all_measurements()
+
+        # Compare each robot with all the other robots and find their similarity
+        for robot_a in robot_ids:
+            for robot_b in robot_ids:
+                # We don't need to calculate the same pair twice
+                if (robot_a == robot_b) or (frozenset([robot_a, robot_b]) in robot_similarities.keys()):
+                    continue
+
+                similarity = calc_similarity(robot_a, robot_b, all_robot_measurements)
+                # Keep it only if it meets the similarity requirement
+                if similarity >= similarity_ratio:
+                    robot_similarities[frozenset([robot_a, robot_b])] = similarity
+                else:
+                    robot_similarities[frozenset([robot_a, robot_b])] = None
+    return robot_similarities
+
+def calc_similarity(robot_a_id, robot_b_id, all_robot_measurements):
+    # Get the speed measurements of the robots
+    robot_a_measurements = all_robot_measurements[robot_a_id]
+    robot_b_measurements = all_robot_measurements[robot_b_id]
+
+    # Initialize the values that will be used in the cosine similarity formula
+    numerator = 0
+    denominator_a = 0
+    denominator_b = 0
+
+    # To find the similarity, we must compare the corresponding measurements
+    # Therefore we iterate through each measurement of robot A and see if there is a corresponding for robot B
+    for curr_time, (vx_a, vy_a) in robot_a_measurements.items():
+
+        if curr_time not in robot_b_measurements:
+            continue
+
+        vx_b = robot_b_measurements[curr_time][0]
+        vy_b = robot_b_measurements[curr_time][1]
+
+        numerator += (vx_a * vx_b) + (vy_a * vy_b)
+        denominator_a += vx_a ** 2 + vy_a ** 2
+        denominator_b += vx_b ** 2 + vy_b ** 2
+
+    # See the cosine similarity formula given
+    return numerator / ((denominator_a ** 0.5) * (denominator_b ** 0.5))
+
+def get_measurements(robot_id):
+    # Dictionary of the form: robot_measurements[measurement_time] = [vx, vy]
+    robot_measurements = {}
+
+    with open(DATAPATH) as file:
+        reader = csv.reader(file)
+        next(reader)
+
+        # We have to find all the rows in the datafile containing measurements for the given robot
+        for row in reader:
+            row_id = int(row[0])
+
+            # All the robot measurements are gathered together in the data file.
+            # This means that if the ID in the current row is not the robot's, but we have already got data for that robot,
+            # then that robot's data is over
+            if (row_id != robot_id) and robot_measurements:
+                break
+
+            # If the robot's ID matches, get the measurement data
+            if row_id == robot_id:
+                measurement_time = float(row[1])
+                vx = float(row[6])
+                vy = float(row[7])
+                robot_measurements[measurement_time] = [vx, vy]
+    return robot_measurements
+
+def get_all_measurements():
+    # Dictionary of the form: robot_measurements[measurement_time] = {measurement_time : [vx, vy]}
+    robot_measurements = {}
+
+    with open(DATAPATH) as file:
+        reader = csv.reader(file)
+        next(reader)
+
+        # We have to find all the rows in the datafile containing measurements for the given robot
+        for row in reader:
+            robot_id = int(row[0])
+            measurement_time = float(row[1])
+            vx = float(row[6])
+            vy = float(row[7])
+
+            if robot_id not in robot_measurements:
+                # Dictionary of the form: robot_measurements[robot_id][measurement_time] = [vx, vy]
+                robot_measurements[robot_id] = {}
+
+            # Get the measurement data
+            robot_measurements[robot_id][measurement_time] = [vx, vy]
+    return robot_measurements
+
 
 
 
@@ -199,7 +312,7 @@ def dominance():
 
 def menu():
     while True:
-        choice = input(f'Please Choose your option:')
+        choice = input(f'Please Choose your option: ')
         match choice:
             case '1':
                 min_speed = input(f'Please choose your minimum speed:')
@@ -212,7 +325,7 @@ def menu():
                     for robot_id, (avg, count) in avg_speeds.items():
                         print(f"{robot_id:<8} {avg:<19.4f} {count:<15}")
             case '2':
-                robot_count = int(input(f'Please choose how many robots:'))
+                robot_count = int(input(f'Please choose how many robots: '))
 
                 top_speed_robots = top_speed(robot_count)
                 print(f'{'Rank'}  {'robot_id'}  {'Μέση Ταχύτητα (m/s)'}  {'Αριθμός Εγγραφών'}')
@@ -233,8 +346,8 @@ def menu():
                     for robot_id, (ratio, count) in filtered.items():
                         print(f"{robot_id:<8} {ratio:<19.4f} {count:<15}")
             case '4':
-                start_time = float(input(f'Please choose the start time:'))
-                end_time = float(input(f'Please choose the end time:'))
+                start_time = float(input(f'Please choose the start time: '))
+                end_time = float(input(f'Please choose the end time: '))
                 robot_collisions = collisions(start_time, end_time)
 
                 print(f'Robot ID  Collision Count  Timeframe')
@@ -255,8 +368,16 @@ def menu():
                 average_displacement_per_step = input(f'Please choose the robot\'s average displacement per step:')
                 # iceberg(active_steps, average_displacement_per_step)
             case '8':
-                similarity = input(f'Please enter the cosine similarity the robots should have')
-                # similar_robots(similarity)
+                similarity_threshold = float(input(f'Please enter the cosine similarity the robots should have: '))
+                robot_similarities = similar_robots(similarity_threshold)
+
+                print(f'Robot A ID  Robot B ID  Cosine Similarity')
+
+                for id_pair, similarity_ratio in robot_similarities.items():
+                    if similarity_ratio is None:
+                        continue
+                    id_a, id_b = id_pair
+                    print(f'{id_a:<10}  {id_b:<10}  {similarity_ratio:<17.2f}')
             case '9':
                 critical_distance = input(f'Please enter the maximum distance two robots can reach without danger of crashing:')
                 # proximity_events()
