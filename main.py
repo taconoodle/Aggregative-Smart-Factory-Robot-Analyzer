@@ -305,6 +305,55 @@ def get_all_measurements():
             robot_measurements[robot_id][measurement_time] = [vx, vy]
     return robot_measurements
 
+def lagged_corr(robot_a, robot_b, lag):
+    # Variables that track the best possible lag for the pair of robots and the correlation corresponding to it
+    best_lag = None
+    best_correlation = None
+
+    # Get all the robots' measurements and their average speeds first, for efficiency
+    all_robot_measurements = get_all_measurements()
+    all_robot_avg_speeds = get_avg_speeds()
+
+    # For every possible lag from -lag to lag, calculate the correlation the pair of robots' have
+    for curr_lag in range(-lag, lag + 1):
+        correlation = calc_correlation(robot_a, robot_b, curr_lag, all_robot_measurements, all_robot_avg_speeds)
+        # If the new lag gives the best results update the best one
+        if (best_correlation is None) or (correlation > best_correlation):
+            best_correlation = correlation
+            best_lag = curr_lag
+
+    return [best_lag, best_correlation]
+
+
+def calc_correlation(robot_a, robot_b, lag, robot_measurements, robot_avg_velocities):
+    numerator = 0
+    denominator_a = 0
+    denominator_b = 0
+
+    # Get the average speed of the pair of robots and the times at which there are measurements
+    available_measure_times = [time for time in robot_measurements[robot_a].keys()]
+    avg_speed_a = robot_avg_velocities[robot_a][0]
+    avg_speed_b = robot_avg_velocities[robot_b][0]
+
+    # Set the required range of indexes that will be used to iterate through the measurements, depending on the sign of the lag
+    if lag >= 0:
+        measurements_range = range(0, len(available_measure_times) - lag)
+    else:
+        measurements_range = range(lag, len(available_measure_times))
+
+    for i in measurements_range:
+        # Velocity of a robot is: sqrt(vx^2 + vy^2)
+        velocity_a = (robot_measurements[robot_a][available_measure_times[i]][0] ** 2 +
+                      robot_measurements[robot_a][available_measure_times[i]][1] ** 2) ** 0.5
+        lag_velocity_b = (robot_measurements[robot_b][available_measure_times[i + lag]][0] ** 2 +
+                      robot_measurements[robot_b][available_measure_times[i + lag]][1] ** 2) ** 0.5
+
+        # Calculate the correlation using the formula given
+        numerator += (velocity_a - avg_speed_a) * (lag_velocity_b - avg_speed_b)
+        denominator_a += (velocity_a - avg_speed_a) ** 2
+        denominator_b += (lag_velocity_b - avg_speed_b) ** 2
+
+    return numerator / ((denominator_a ** 0.5) * (denominator_b ** 0.5))
 
 
 
@@ -382,10 +431,11 @@ def menu():
                 critical_distance = input(f'Please enter the maximum distance two robots can reach without danger of crashing:')
                 # proximity_events()
             case '10':
-                robot_A = input(f'Please choose the first robot:')
-                robot_B = input(f'Please choose the second robot:')
-                time_lags = input(f'Please choose the lag time:')
-                # lagged_corr()
+                robot_a = int(input(f'Please choose the first robot:'))
+                robot_b = int(input(f'Please choose the second robot:'))
+                time_lag = int(input(f'Please choose the lag time:'))
+                best_lag, best_correlation = lagged_corr(robot_a, robot_b, time_lag)
 
-
+                print(f'Robot A ID  Robot B ID  Best lag  Correlation at best lag')
+                print(f'{robot_a:<10}  {robot_b:<10}  {best_lag:<8}  {best_correlation:<23.4f}')
 menu()
