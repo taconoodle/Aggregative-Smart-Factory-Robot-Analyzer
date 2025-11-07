@@ -1,8 +1,7 @@
 import csv
 import math
-
-# DATAPATH = "C:/Users/giann/Downloads/smart_factory_robots.csv"
-DATAPATH = "C:/Users/Ιωάννης Βλάσσης/Downloads/smart_factory_robots.csv"
+import logging
+import logging.config
 
 ######################## SMOKE CODE ##############################
 
@@ -245,6 +244,7 @@ def proximity_events(critical_distance):
                     events.append((current_time, robot_id1, robot_id2, dist))
 
     return events
+
 
 
 
@@ -534,12 +534,18 @@ def calc_correlation(robot_a, robot_b, lag, robot_measurements, robot_avg_veloci
 ######################## GENERAL CODE ############################
 
 def menu():
+
+    logging.config.fileConfig('logging.conf')
+    logger = logging.getLogger(__name__)
+
     while True:
-        choice = input(f'Please Choose your option: ')
+        choice = input(f'Please Choose your option:')
+        logger.info("User selected menu option: %s", choice)
         match choice:
             case '1':
                 min_speed = float(input(f'Please choose your minimum speed:'))
                 max_speed = float(input(f'Please choose your maximum speed:'))
+                logger.info("User requested avg_speed with min=%.4f max=%.4f", min_speed, max_speed)
                 avg_speeds = avg_speed(min_speed, max_speed)
                 if not avg_speeds:
                     print('No robots found in the specified speed range.')
@@ -548,7 +554,7 @@ def menu():
                     for robot_id, (avg, count) in avg_speeds.items():
                         print(f'{robot_id:<8} {avg:<19.4f} {count:<15}')
             case '2':
-                robot_count = int(input(f'Please choose how many robots: '))
+                robot_count = int(input(f'Please choose how many robots:'))
 
                 top_speed_robots = top_speed(robot_count)
                 print(f'{'Rank'}  {'robot_id'}  {'Μέση Ταχύτητα (m/s)'}  {'Αριθμός Εγγραφών'}')
@@ -561,6 +567,7 @@ def menu():
             case '3':
                 min_percentage = float(input(f'Please choose the minimum percentage of time:'))
                 max_percentage = float(input(f'Please choose the maximum percentage of time:'))
+                logger.info("User requested idle_ratio between %.2f and %.2f", min_percentage, max_percentage)
                 filtered = idle_ratio(min_percentage, max_percentage)
                 if not filtered:
                     print("No robots found in the specified idle ratio range.")
@@ -569,8 +576,8 @@ def menu():
                     for robot_id, (ratio, count) in filtered.items():
                         print(f'{robot_id:<8} {ratio:<19.4f} {count:<15}')
             case '4':
-                start_time = float(input(f'Please choose the start time: '))
-                end_time = float(input(f'Please choose the end time: '))
+                start_time = float(input(f'Please choose the start time:'))
+                end_time = float(input(f'Please choose the end time:'))
                 robot_collisions = collisions(start_time, end_time)
 
                 print(f'Robot ID  Collision Count  Timeframe')
@@ -579,6 +586,7 @@ def menu():
 
             case '5':
                 deadlock_steps = int(input(f'Please choose the minimum amount of steps the robot was in a deadlock for:'))
+                logger.info("User requested deadlocks with minimum steps=%d", deadlock_steps)
                 deadlocks_results = deadlocks(deadlock_steps)
                 if not deadlocks_results:
                     print('No deadlock streak found for the desired amount of steps.')
@@ -596,6 +604,7 @@ def menu():
             case '7':
                 active_steps = int(input(f'Please choose the minimum number of the robot\'s active steps:'))
                 average_displacement_per_step = float(input(f'Please choose the robot\'s average displacement per step:'))
+                logger.info("User requested iceberg with active_steps=%d avg_disp_threshold=%.2f", active_steps, average_displacement_per_step)
                 results = iceberg(active_steps, average_displacement_per_step)
                 if not results:
                     print('No robots found meeting the Iceberg criteria.')
@@ -616,6 +625,7 @@ def menu():
                     print(f'{id_a:<10}  {id_b:<10}  {similarity_ratio:<17.2f}')
             case '9':
                 critical_distance = float(input(f'Please enter the maximum distance two robots can reach without danger of crashing:'))
+                logger.info("User requested proximity events with critical distance=%.2f", critical_distance)
                 event_results = proximity_events(critical_distance)
                 if not event_results:
                     print('No robots found in critical distance.')
