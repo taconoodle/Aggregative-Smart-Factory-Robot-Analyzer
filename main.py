@@ -149,7 +149,7 @@ def read_robot_positions():
             px = float(row[3])
             py = float(row[4])
             pz = float(row[5])
-            idle_state = row[9].strip()
+            idle_state = row[9]
 
             if robot_id not in robot_data:
                 robot_data[robot_id] = []
