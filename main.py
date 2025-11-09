@@ -61,8 +61,8 @@ def idle_ratio(min_percentage, max_percentage):
             total_time += dt
             if prev_idle_state == "True":
                 idle_time += dt
-            ratio = idle_time / total_time
-            robot_ratios[robot_id] = (ratio, len(rows))
+        ratio = idle_time / total_time
+        robot_ratios[robot_id] = (ratio, len(rows))
 
     filtered_robots = {} # dict to filter to the range
 
