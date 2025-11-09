@@ -3,6 +3,7 @@ import math
 import logging
 import logging.config
 
+
 ######################## SMOKE CODE ##############################
 
 def avg_speed(min_speed, max_speed):
@@ -18,6 +19,7 @@ def avg_speed(min_speed, max_speed):
             filtered_avg[robot_id] = (avg, count)
 
     return filtered_avg
+
 
 def idle_ratio(min_percentage, max_percentage):
     if min_percentage > max_percentage:
@@ -70,6 +72,7 @@ def idle_ratio(min_percentage, max_percentage):
 
     return filtered_robots
 
+
 def read_deadlock_data():
     robot_data = {} # dict robot_data[robot_id] = (current_time, deadlock_state)
 
@@ -92,6 +95,7 @@ def read_deadlock_data():
             robot_data[robot_id].sort(key=lambda x: x[0])
 
         return robot_data
+
 
 def deadlocks(deadlock_steps):
     w = deadlock_steps
@@ -134,6 +138,7 @@ def deadlocks(deadlock_steps):
 
     return deadlock_results
 
+
 def read_robot_positions():
 
     robot_data = {} # dict robot_data[robot_id] =(current_time, px, py, pz, idle_state)
@@ -148,7 +153,7 @@ def read_robot_positions():
             px = float(row[3])
             py = float(row[4])
             pz = float(row[5])
-            idle_state = row[9].strip()
+            idle_state = row[9]
 
             if robot_id not in robot_data:
                 robot_data[robot_id] = []
@@ -159,6 +164,7 @@ def read_robot_positions():
         robot_data[robot_id].sort(key=lambda x: x[0])
 
     return robot_data
+
 
 def iceberg(active_steps, average_displacement_per_step):
 
@@ -193,6 +199,7 @@ def iceberg(active_steps, average_displacement_per_step):
 
     return iceberg_results
 
+
 def read_robot_positions_by_time():
     # dict positions_by_time[current_time][robot_id] = [robot,px,py,pz]
     positions_by_time = {}
@@ -214,6 +221,7 @@ def read_robot_positions_by_time():
             positions_by_time[current_time][robot_id] = (px, py, pz)
 
     return positions_by_time
+
 
 def proximity_events(critical_distance):
 
@@ -244,9 +252,6 @@ def proximity_events(critical_distance):
                     events.append((current_time, robot_id1, robot_id2, dist))
 
     return events
-
-
-
 
 ########################## TACO CODE #############################
 
@@ -498,7 +503,6 @@ def lagged_corr(robot_a, robot_b, lag):
 
     return [best_lag, best_correlation]
 
-
 def calc_correlation(robot_a, robot_b, lag, robot_measurements, robot_avg_velocities):
     numerator = 0
     denominator_a = 0
@@ -642,3 +646,4 @@ def menu():
                 print(f'Robot A ID  Robot B ID  Best lag  Correlation at best lag')
                 print(f'{robot_a:<10}  {robot_b:<10}  {best_lag:<8}  {best_correlation:<23.4f}')
 menu()
+
