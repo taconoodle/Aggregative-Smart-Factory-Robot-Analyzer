@@ -1,5 +1,5 @@
 import csv
-import math
+
 
 # DATAPATH = "C:/Users/giann/Downloads/smart_factory_robots.csv"
 DATAPATH = "C:/Users/Ιωάννης Βλάσσης/Downloads/smart_factory_robots.csv"
@@ -183,7 +183,7 @@ def iceberg(active_steps, average_displacement_per_step):
                 dx = curr_x - prev_x
                 dy = curr_y - prev_y
                 dz = curr_z - prev_z
-                displacement = math.sqrt(dx ** 2 + dy ** 2 + dz ** 2)
+                displacement = (dx ** 2 + dy ** 2 + dz ** 2)**0.5
                 total_dis += displacement
                 streak += 1
 
@@ -239,7 +239,7 @@ def proximity_events(critical_distance):
                 dx = x2 - x1
                 dy = y2 - y1
                 dz = z2 - z1
-                dist = math.sqrt(dx ** 2 + dy ** 2 + dz ** 2)
+                dist = (dx ** 2 + dy ** 2 + dz ** 2)**0.5
                 # if in the desired distance add in the list
                 if dist < critical_distance:
                     events.append((current_time, robot_id1, robot_id2, dist))
@@ -267,7 +267,7 @@ def get_avg_speeds():
             vy = float(row[7])
 
             # Given formula
-            speed = math.sqrt(vx ** 2 + vy ** 2)
+            speed = (vx ** 2 + vy ** 2)**0.5
 
             # If we don't initialize, the addition below, will fail
             if robot_id not in robot_avgs:
