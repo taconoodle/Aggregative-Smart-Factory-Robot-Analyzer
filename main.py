@@ -3,7 +3,13 @@ import logging
 import logging.config
 
 
+
+# DATAPATH = "data/smart_factory_robots.csv"
+DATAPATH = "/content/drive/MyDrive/robot_data/smart_factory_robots.csv"
+
+
 ######################## SMOKE CODE ##############################
+
 
 def avg_speed(min_speed, max_speed):
     if min_speed > max_speed:
@@ -252,10 +258,9 @@ def proximity_events(critical_distance):
 
     return events
 
+
 ########################## TACO CODE #############################
 
-DATAPATH = "data/smart_factory_robots.csv"
-# DATAPATH = "C:/Users/Ιωάννης Βλάσσης/Downloads/smart_factory_robots.csv"
 
 def get_avg_speeds():
     # Dictionary of the form: robot_avgs[robot ID] = [average speed, count of measurements]
@@ -535,6 +540,7 @@ def calc_correlation(robot_a, robot_b, lag, robot_measurements, robot_avg_veloci
 
 
 ######################## GENERAL CODE ############################
+
 
 def menu():
 
