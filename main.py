@@ -3,9 +3,8 @@ import logging
 import logging.config
 
 
-
-# DATAPATH = "data/smart_factory_robots.csv"
-DATAPATH = "/content/drive/MyDrive/robot_data/smart_factory_robots.csv"
+DATAPATH = "data/smart_factory_robots.csv"
+# DATAPATH = "/content/drive/MyDrive/robot_data/smart_factory_robots.csv"
 
 
 ######################## SMOKE CODE ##############################
@@ -229,7 +228,6 @@ def read_robot_positions_by_time():
 
 
 def proximity_events(critical_distance):
-
     if critical_distance < 0:
         print("distance can't be negative")
         return []
@@ -549,23 +547,29 @@ def menu():
 
     while True:
         choice = input(f'Please Choose your option:')
-        logger.info("User selected menu option: %s", choice)
         match choice:
             case '1':
                 min_speed = float(input(f'Please choose your minimum speed:'))
                 max_speed = float(input(f'Please choose your maximum speed:'))
-                logger.info("User requested avg_speed with min=%.4f max=%.4f", min_speed, max_speed)
+
+                logger.info("User called avg_speed with min=%.4f max=%.4f", min_speed, max_speed)
                 avg_speeds = avg_speed(min_speed, max_speed)
+                logger.info("Finished running avg_speed")
+
                 if not avg_speeds:
                     print('No robots found in the specified speed range.')
                 else:
                     print(f'{'robot_id':<8} {'Μέση Ταχύτητα (m/s)':<19} {'Αριθμός Εγγραφών':<15}')
                     for robot_id, (avg, count) in avg_speeds.items():
                         print(f'{robot_id:<8} {avg:<19.4f} {count:<15}')
+
             case '2':
                 robot_count = int(input(f'Please choose how many robots:'))
 
+                logger.info(f'User called top_speed: robot_count={robot_count}')
                 top_speed_robots = top_speed(robot_count)
+                logger.info(f'Finished running top_speed')
+
                 print(f'{'Rank'}  {'robot_id'}  {'Μέση Ταχύτητα (m/s)'}  {'Αριθμός Εγγραφών'}')
 
                 i = 0
@@ -576,18 +580,26 @@ def menu():
             case '3':
                 min_percentage = float(input(f'Please choose the minimum percentage of time:'))
                 max_percentage = float(input(f'Please choose the maximum percentage of time:'))
-                logger.info("User requested idle_ratio between %.2f and %.2f", min_percentage, max_percentage)
+
+                logger.info("User called idle_ratio between %.2f and %.2f", min_percentage, max_percentage)
                 filtered = idle_ratio(min_percentage, max_percentage)
+                logger.info("Finished running idle_ratio")
+
                 if not filtered:
                     print("No robots found in the specified idle ratio range.")
+
                 else:
                     print(f'{'robotID':<8} {'Ποσοστό Αδράνειας':<19} {'Αριθμός Εγγραφών':<15}')
                     for robot_id, (ratio, count) in filtered.items():
                         print(f'{robot_id:<8} {ratio:<19.4f} {count:<15}')
+
             case '4':
                 start_time = float(input(f'Please choose the start time:'))
                 end_time = float(input(f'Please choose the end time:'))
+
+                logger.info(f'User called collisions: start_time={start_time}  end_time={end_time}')
                 robot_collisions = collisions(start_time, end_time)
+                logger.info(f'Finished running collisions')
 
                 print(f'Robot ID  Collision Count  Timeframe')
                 for robot_id, (count, first_collision_time, last_collision_time) in robot_collisions.items():
@@ -595,8 +607,11 @@ def menu():
 
             case '5':
                 deadlock_steps = int(input(f'Please choose the minimum amount of steps the robot was in a deadlock for:'))
-                logger.info("User requested deadlocks with minimum steps=%d", deadlock_steps)
+
+                logger.info("User called deadlocks with minimum steps=%d", deadlock_steps)
                 deadlocks_results = deadlocks(deadlock_steps)
+                logger.info("Finished running deadlocks")
+
                 if not deadlocks_results:
                     print('No deadlock streak found for the desired amount of steps.')
                 else:
@@ -604,26 +619,38 @@ def menu():
                     for robot_id, streak in deadlocks_results.items():
                         for start, end, length in streak:
                             print(f'{robot_id:<8} {start:<19.1f} {end:<19.1f} {length:<9}')
+
             case '6':
+                logger.info(f'User called dominance')
                 dominant_robots = dominance()
+                logger.info(f'Finished running dominance')
+
                 print(f'Robot ID  Average Speed  Idle Ratio  Collision Count')
 
-                for robot_id, (avg, idle_ratio, collisions) in dominant_robots.items():
-                    print(f'{robot_id:<8}  {avg:<13.4f }  {idle_ratio:<10.4f}  {collisions:<15}')
+                for robot_id, (avg, ratio, collision_count) in dominant_robots.items():
+                    print(f'{robot_id:<8}  {avg:<13.4f}  {ratio:<10.4f}  {collision_count:<15}')
+
             case '7':
                 active_steps = int(input(f'Please choose the minimum number of the robot\'s active steps:'))
                 average_displacement_per_step = float(input(f'Please choose the robot\'s average displacement per step:'))
-                logger.info("User requested iceberg with active_steps=%d avg_disp_threshold=%.2f", active_steps, average_displacement_per_step)
+
+                logger.info("User called iceberg with active_steps=%d avg_disp_threshold=%.2f", active_steps, average_displacement_per_step)
                 results = iceberg(active_steps, average_displacement_per_step)
+                logger.info("Finished running iceberg")
+
                 if not results:
                     print('No robots found meeting the Iceberg criteria.')
                 else:
                     print(f'{'robotID':<10} {'Μέση Μετατόπιση':<20} {'Αριθμός Εγγραφών':<10}')
                     for robot_id, (avg_disp, count) in results.items():
                         print(f'{robot_id:<10} {avg_disp:<20.2f} {count:<10}')
+
             case '8':
                 similarity_threshold = float(input(f'Please enter the cosine similarity the robots should have: '))
+
+                logger.info(f'User called similar_robots: similarity_threshold={similarity_threshold}')
                 robot_similarities = similar_robots(similarity_threshold)
+                logger.info(f'Finished running similar_robots')
 
                 print(f'Robot A ID  Robot B ID  Cosine Similarity')
 
@@ -632,21 +659,29 @@ def menu():
                         continue
                     id_a, id_b = id_pair
                     print(f'{id_a:<10}  {id_b:<10}  {similarity_ratio:<17.2f}')
+
             case '9':
                 critical_distance = float(input(f'Please enter the maximum distance two robots can reach without danger of crashing:'))
-                logger.info("User requested proximity events with critical distance=%.2f", critical_distance)
+
+                logger.info("User called proximity events with critical distance=%.2f", critical_distance)
                 event_results = proximity_events(critical_distance)
+                logger.info("Finished running proximity_events")
+
                 if not event_results:
                     print('No robots found in critical distance.')
                 else:
                     print(f'{'Χρόνος':<10} {'Robot 1':<8} {'Robot 2':<8} {'Απόσταση':<10}')
                     for time, robot_id1, robot_id2, dist in event_results:
                         print(f'{time:<10.2f} {robot_id1:<8} {robot_id2:<8} {dist:<10.2f}')
+
             case '10':
                 robot_a = int(input(f'Please choose the first robot:'))
                 robot_b = int(input(f'Please choose the second robot:'))
                 time_lag = int(input(f'Please choose the lag time:'))
+
+                logger.info(f"User called lagged_corr: robot_a={robot_a}  robot_b={robot_b}  time_lag={time_lag}")
                 best_lag, best_correlation = lagged_corr(robot_a, robot_b, time_lag)
+                logger.info(f'Finished running lagged_corr')
 
                 print(f'Robot A ID  Robot B ID  Best lag  Correlation at best lag')
                 print(f'{robot_a:<10}  {robot_b:<10}  {best_lag:<8}  {best_correlation:<23.4f}')
