@@ -366,8 +366,15 @@ def dominance():
             base_idle_ratio = robot_idle_ratios[base_robot_id][0]
             candidate_idle_ratio = robot_idle_ratios[candidate_robot_id][0]
 
-            base_collisions = robot_collisions[base_robot_id][0]
-            candidate_collisions = robot_collisions[candidate_robot_id][0]
+            if base_robot_id not in robot_collisions:
+                base_collisions = 0
+            else:
+                base_collisions = robot_collisions[base_robot_id][0]
+            if candidate_robot_id not in robot_collisions:
+                candidate_collisions = 0
+            else:
+                candidate_collisions = robot_collisions[candidate_robot_id][0]
+
             # The actual comparison
             if (base_avg <= candidate_avg and
                 base_idle_ratio >=candidate_idle_ratio and
