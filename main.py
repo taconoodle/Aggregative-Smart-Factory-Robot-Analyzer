@@ -2,7 +2,6 @@ import csv
 import logging
 import logging.config
 
-
 DATAPATH = "data/smart_factory_robots.csv"
 # DATAPATH = "/content/drive/MyDrive/robot_data/smart_factory_robots.csv"
 
@@ -78,7 +77,7 @@ def idle_ratio(min_percentage, max_percentage):
 
 
 def read_deadlock_data():
-    robot_data = {} # dict robot_data[robot_id] = (current_time, deadlock_state)
+    robot_data = {} # dict robot_data[robot_id][i] = (current_time, deadlock_state)
 
     # Read and group info by robot id
     with open(DATAPATH) as file:
@@ -226,7 +225,6 @@ def read_robot_positions_by_time():
 
     return positions_by_time
 
-
 def proximity_events(critical_distance):
     if critical_distance < 0:
         print("distance can't be negative")
@@ -360,6 +358,9 @@ def dominance():
     # Compare each robot with all the others, stop when you find one that's better
     for base_robot_id in robot_ids:
         for candidate_robot_id in robot_ids:
+            if base_robot_id == candidate_robot_id:
+                continue
+
             base_avg = robot_avgs[base_robot_id][0]
             candidate_avg = robot_avgs[candidate_robot_id][0]
 
@@ -377,7 +378,7 @@ def dominance():
 
             # The actual comparison
             if (base_avg <= candidate_avg and
-                base_idle_ratio >=candidate_idle_ratio and
+                base_idle_ratio >= candidate_idle_ratio and
                 base_collisions >= candidate_collisions
             ):
                 # If the robot is better, add it to the dictionary of dominant robots
@@ -415,7 +416,7 @@ def similar_robots(similarity_ratio: float):
                     robot_similarities[frozenset([robot_a, robot_b])] = similarity
                 else:
                     robot_similarities[frozenset([robot_a, robot_b])] = None
-    return robot_similarities
+    return dict(sorted(robot_similarities.items(), key=lambda x: x[1] if x[1] is not None else -1, reverse=True))
 
 def calc_similarity(robot_a_id, robot_b_id, all_robot_measurements):
     # Get the speed measurements of the robots
@@ -471,7 +472,7 @@ def get_measurements(robot_id):
     return robot_measurements
 
 def get_all_measurements():
-    # Dictionary of the form: robot_measurements[measurement_time] = {measurement_time : [vx, vy]}
+    # Dictionary of the form: robot_measurements[robot_id] = {measurement_time : [vx, vy]}
     robot_measurements = {}
 
     with open(DATAPATH) as file:
@@ -692,5 +693,6 @@ def menu():
 
                 print(f'Robot A ID  Robot B ID  Best lag  Correlation at best lag')
                 print(f'{robot_a:<10}  {robot_b:<10}  {best_lag:<8}  {best_correlation:<23.4f}')
-menu()
 
+
+menu()
